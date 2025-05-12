@@ -1,209 +1,165 @@
-# CS336 Assignment 2: Systems and Parallelism
+# CS336 Assignment 4: Filtering Language Modeling Data
 
-## Section 1: Profiling and Benchmarking
+## 1. Assignment Overview
 
-### 1.1.3 End-to-End Benchmarking
+Implement:
 
-#### (a) Benchmarking Script
-Write a script to perform basic end-to-end benchmarking of the forward and backward passes in your model.
+* Convert Common Crawl HTML to text.
+* Filter extracted text (harmful content, personal identifiable information, etc.).
+* Deduplicate training data.
 
-*Your implementation goes here.*
+Run:
 
-#### (b) Forward and Backward Pass Timings
-Time the forward and backward passes for the model sizes described in §1.1.2.
+* Train language models on different datasets.
 
-*Your response goes here.*
+## 2. Filtering Common Crawl
 
-#### (c) Warm-Up Steps Impact
-Repeat your analysis without the warm-up steps. How does this affect your results?
+### Problem (look\_at\_cc) - 4 points
 
-*Your response goes here.*
+**(a)**
 
-### 1.1.4 Nsight Systems Profiler
+* URL:
+* Accessible?:
+* Content description:
 
-#### (a) Forward Pass Total Time
-What is the total time spent on your forward pass?
+**(b)**
 
-*Your response goes here.*
+* Text that should've been filtered:
+* Issues for training:
+* Useful information:
 
-#### (b) CUDA Kernel with Most GPU Time
-What CUDA kernel takes the most cumulative GPU time during the forward pass?
+**(c)**
 
-*Your response goes here.*
+* Application domain useful:
+* Application domain not useful:
 
-#### (c) Other Significant CUDA Kernels
-What other kernels besides matrix multiplies do you see accounting for non-trivial CUDA runtime in the forward pass?
+**(d)**
 
-*Your response goes here.*
+* Annotations of 25 documents:
 
-#### (d) AdamW Optimizer Step Profiling
-Profile running one complete training step with your implementation of AdamW.
+### Problem (extract\_text) - 3 points
 
-*Your response goes here.*
+**(a)**
 
-#### (e) Softmax vs. Matrix Multiplication Runtimes
-Compare the runtime of the softmax operation versus the matrix multiplication operations within the self-attention layer.
+* Function implementation:
 
-*Your response goes here.*
+**(b)**
 
-### 1.1.5 Mixed Precision
+* Comparison to WET file extraction:
 
-#### Mixed Precision Accumulation
-Run the provided mixed precision accumulation code and comment on the accuracy.
+### Problem (language\_identification) - 6 points
 
-*Your response goes here.*
+**(a)**
 
-#### (a) Toy Model Data Types
-What are the data types of various components within the autocast context?
+* Language identification function implementation:
 
-- Model parameters:
-- Output of first layer:
-- Output of layer norm:
-- Model's logits:
-- Loss:
-- Gradients:
+**(b)**
 
-#### (b) Layer Normalization and Precision
-What parts of layer normalization are sensitive to mixed precision?
+* Potential issues:
+* Mitigation strategy:
 
-*Your response goes here.*
+**(c)**
 
-#### (c) Mixed Precision Benchmarking Timings and Trends
-Modify your benchmarking script to optionally run the model using mixed precision with BF16.
+* Classifier accuracy observations:
+* English document fraction:
+* Recommended threshold:
 
-*Your response goes here.*
+### Problem (mask\_pii) - 3 points
 
-### 1.1.6 Profiling Memory
+1\. **Mask Emails:**
 
-#### (a) Memory Timeline Images and Response
-Run your model through the memory profiler. How do your memory timelines look?
+* Implementation:
 
-- Forward Pass:
-- Full Training Step:
+2\. **Mask Phone Numbers:**
 
-*Your commentary goes here.*
+* Implementation:
 
-#### (b) Peak Memory Usage Table
-What is the peak memory usage of each model size?
+3\. **Mask IP Addresses:**
 
-| Model Size | Forward Pass (MB) | Full Training Step (MB) |
-|------------|-------------------|-------------------------|
-| Small      |                   |                         |
-| Medium     |                   |                         |
-| Large      |                   |                         |
-| XL         |                   |                         |
-| 2.7B       |                   |                         |
+* Implementation:
 
-#### (c) Mixed Precision Memory Impact
-Does mixed-precision significantly affect memory usage?
+4\. **Potential downstream issues and mitigation:**
 
-*Your response goes here.*
+5\. **False positives/negatives examples:**
 
-#### (d) Size of Activations Tensor
-What is the size of a tensor of activations in the Transformer residual stream?
+### Problem (harmful\_content) - 6 points
 
-*Your response and derivation go here.*
+1\. **NSFW Detection:**
 
-#### (e) Largest Allocation Size and Source
-What is the size of the largest allocations shown and where do they come from?
+* Implementation:
 
-*Your response goes here.*
+2\. **Toxic Speech Detection:**
 
-## Section 1.2: Optimizing Attention with FlashAttention-2
+* Implementation:
 
-### 1.2.1 Benchmarking PyTorch Attention
-Benchmark your attention implementation at different scales.
+3\. **Potential downstream issues and mitigation:**
 
-*Table with timings, memory usage calculation, and commentary goes here.*
+4\. **Classifier errors and suitable threshold:**
 
-## Section 1.3: Benchmarking JIT-Compiled Attention
+### Problem (gopher\_quality\_filters) - 3 points
 
-#### (a) Compiled vs. Uncompiled Attention Timings
-Compare the compiled and uncompiled versions of your attention implementation.
+**(a)**
 
-*Comparison table goes here.*
+* Quality filters implementation:
 
-#### (b) Entire Transformer Model Compilation Timings
-How does the performance of the forward pass change when compiling your entire Transformer model?
+**(b)**
 
-*Comparison table goes here.*
+* Filter accuracy observations:
 
-### 1.3.2 FlashAttention-2 Forward Pass
+### Problem (quality\_classifier) - 15 points
 
-#### (a) PyTorch Autograd Implementation
-Write a pure PyTorch autograd function that implements the FlashAttention-2 forward pass.
+**(a)**
 
-*Your implementation details here.*
+* Quality classifier implementation:
 
-#### (b) Triton Kernel Implementation
-Write a Triton kernel for the forward pass of FlashAttention-2.
+**(b)**
 
-*Your Triton implementation details here.*
+* Labeling and confidence score implementation:
 
-#### (c) Causal Masking Implementation
-Add a causal masking flag to your FlashAttention-2 implementation.
+## 3. Deduplication
 
-*Your implementation details here.*
+### Problem (exact\_deduplication) - 3 points
 
-## Section 2: Distributed Data Parallel Training
+* Implementation:
 
-### 2.1 Single-Node Distributed Communication
-Benchmark the runtime of the all-reduce operation in single-node multi-process setups.
+### Problem (minhash\_deduplication) - 8 points
 
-*Benchmarking results and commentary go here.*
+* Implementation details:
 
-### 2.2 Naïve Distributed Data Parallel Training
-Write a script to naively perform distributed data parallel training.
+## 4. Leaderboard: Filter Data for Language Modeling
 
-*Implementation details go here.*
+### Problem (filter\_data) - 6 points
 
-### Naïve DDP Benchmarking
-Benchmark the overhead of your naïve DDP implementation.
+**(a)**
 
-*Benchmarking setup and results here.*
+* Filtering script:
+* Filter steps breakdown:
 
-### 2.3 Improving Minimal DDP
+**(b)**
 
-#### 2.3.1 Communication Calls Reduction
-Modify your minimal DDP implementation to communicate a tensor with flattened gradients.
+* Runtime analysis:
 
-*Benchmarking results and comparison go here.*
+### Problem (inspect\_filtered\_data) - 4 points
 
-#### 2.3.2 Overlapping Computation with Individual Gradients
-Implement a DDP class that overlaps gradient communication with computation.
+**(a)**
 
-*Class implementation and benchmarking results here.*
+* Five random examples (with quality analysis):
 
-#### (b) Profiler Screenshots
-Instrument your benchmarking code and provide profiler screenshots.
+**(b)**
 
-- Initial DDP:
-- Overlapping DDP:
+* Five discarded examples (with justification):
 
-### 2.3.3 Bucketed Parameter Gradients
-Implement a Python class using gradient bucketing for DDP.
+**(c)**
 
-*Class implementation goes here.*
+* Iterations and improvements:
 
-#### (a) Bucketed DDP Benchmarking
-Benchmark your bucketed DDP implementation with various bucket sizes.
+### Problem (tokenize\_data) - 2 points
 
-*Results and commentary here.*
+* Tokenization script:
+* Number of tokens:
 
-#### (b) Equation for Optimal Bucket Size
-Write equations modeling DDP overhead and optimal bucket size.
+### Problem (train\_model) - 2 points
 
-*Your equations and explanations here.*
-
-### 2.4 4D Parallelism
-
-#### (a) Memory Calculation
-Calculate the memory needed for the XXL model configuration.
-
-*Calculation and response here.*
-
-#### (b) Memory with Sharding
-Write an expression for memory per device when sharded.
-
-*Calculation and response here.*
-
+* Best validation loss:
+* Learning curve:
+* Description of actions taken:
