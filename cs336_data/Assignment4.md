@@ -10,7 +10,7 @@ Implement:
 
 Run:
 
-* Train language models on different datasets.
+* Train language models using the provided training script to understand the impact of processing decisions on performance.
 
 ## 2. Filtering Common Crawl
 
@@ -132,8 +132,9 @@ Run:
 
 **(a)**
 
-* Filtering script:
+* Filtering script for WET files:
 * Filter steps breakdown:
+* Helpful classes used:
 
 **(b)**
 
