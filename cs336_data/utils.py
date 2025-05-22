@@ -2,6 +2,7 @@ from resiliparse.extract.html2text import extract_plain_text
 from resiliparse.parse.encoding import detect_encoding
 from fasttext import load_model
 from typing import Any, Tuple
+from detoxify import Detoxify
 import re
 
 
@@ -72,4 +73,27 @@ def mask_ips(text: str) -> Tuple[str, int]:
     return masked_text, count
 
 
+def classify_nsfw(text: str, model_path: str = 'data/jigsaw_fasttext_bigrams_nsfw_final.bin') -> Tuple[str, float]:
+    """
+    Classifies the given text as NSFW or not, providing a confidence score.
 
+    Returns:
+        tuple: ('nsfw', confidence_score) or ('safe', confidence_score)
+    """
+    model = load_model(model_path)
+    labels, scores = model.predict(text.replace('\n', ' '), k=1)
+    label = labels[0].replace('__label__', '')
+    return label, scores[0]
+
+
+def classify_toxic_speech(text: str, model_path: str = 'data/jigsaw_fasttext_bigrams_hatespeech_final.bin') -> Tuple[str, float]:
+    """
+    Classifies the given text as toxic or non-toxic, providing a confidence score.
+
+    Returns:
+        tuple: ('toxic', confidence_score) or ('non-toxic', confidence_score)
+    """
+    model = load_model(model_path)
+    labels, scores = model.predict(text.replace('\n', ' '), k=1)
+    label = labels[0].replace('__label__', '')
+    return label, scores[0]
