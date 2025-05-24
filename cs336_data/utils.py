@@ -1,9 +1,18 @@
 from resiliparse.extract.html2text import extract_plain_text
 from resiliparse.parse.encoding import detect_encoding
 from fasttext import load_model
-from typing import Any, Tuple
-from detoxify import Detoxify
+from typing import Any, Tuple, Dict
 import re
+
+# Cache for loaded models
+_model_cache: Dict[str, Any] = {}
+
+
+def _get_cached_model(model_path: str):
+    """Load and cache FastText models to avoid repeated loading."""
+    if model_path not in _model_cache:
+        _model_cache[model_path] = load_model(model_path)
+    return _model_cache[model_path]
 
 
 def extract_text_from_html_bytes(html_bytes: bytes) -> str:
@@ -36,13 +45,25 @@ def identify_language(text: str, model_path: str = 'data/lid.176.bin') -> tuple[
 
     Parameters:
         text (str): The input Unicode string to classify.
+        model_path (str): Path to the FastText language model.
 
     Returns:
         tuple: (language_code, confidence_score)
             language_code (str): ISO language code (e.g., 'en', 'zh').
             confidence_score (float): Confidence score between 0 and 1.
+
+    Raises:
+        ValueError: If text is empty or None
+        FileNotFoundError: If model file doesn't exist
     """
-    model = load_model(model_path)
+    if not text or not text.strip():
+        raise ValueError("Input text cannot be empty")
+
+    try:
+        model = _get_cached_model(model_path)
+    except Exception as e:
+        raise FileNotFoundError(f"Failed to load model from {model_path}: {e}")
+
     predictions = model.predict(text.replace('\n', ' '), k=1)  # Top 1 language
     language_label = predictions[0][0]
     confidence_score = predictions[1][0]
@@ -67,33 +88,59 @@ def mask_phone_numbers(text: str) -> Tuple[str, int]:
 
 
 def mask_ips(text: str) -> Tuple[str, int]:
-    # Matches IPv4 addresses explicitly
-    ipv4_regex = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
-    masked_text, count = re.subn(ipv4_regex, "|||IP_ADDRESS|||", text)
+    """
+    Mask IPv4 and IPv6 addresses in the text.
+
+    Returns:
+        tuple: (masked_text, count of masked IPs)
+    """
+
+    # IPv4 pattern with validation (0-255 range)
+    ipv4_pattern = (
+        r'\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}'
+        r'(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b'
+    )
+
+    # Simplified IPv6 pattern
+    ipv6_pattern = (
+        r'\b(?:[A-Fa-f0-9]{1,4}:){7}[A-Fa-f0-9]{1,4}\b|'
+        r'\b(?:[A-Fa-f0-9]{1,4}:)*:(?:[A-Fa-f0-9]{1,4}:)*[A-Fa-f0-9]{1,4}\b'
+    )
+
+    # Combined pattern
+    ip_pattern = f'({ipv4_pattern})|({ipv6_pattern})'
+
+    masked_text, count = re.subn(ip_pattern, "|||IP_ADDRESS|||", text)
     return masked_text, count
 
 
-def classify_nsfw(text: str, model_path: str = 'data/jigsaw_fasttext_bigrams_nsfw_final.bin') -> Tuple[str, float]:
+def classify_nsfw(
+    text: str,
+    model_path: str = 'data/jigsaw_fasttext_bigrams_nsfw_final.bin'
+) -> Tuple[str, float]:
     """
     Classifies the given text as NSFW or not, providing a confidence score.
 
     Returns:
         tuple: ('nsfw', confidence_score) or ('safe', confidence_score)
     """
-    model = load_model(model_path)
+    model = _get_cached_model(model_path)
     labels, scores = model.predict(text.replace('\n', ' '), k=1)
     label = labels[0].replace('__label__', '')
     return label, scores[0]
 
 
-def classify_toxic_speech(text: str, model_path: str = 'data/jigsaw_fasttext_bigrams_hatespeech_final.bin') -> Tuple[str, float]:
+def classify_toxic_speech(
+    text: str,
+    model_path: str = 'data/jigsaw_fasttext_bigrams_hatespeech_final.bin'
+) -> Tuple[str, float]:
     """
     Classifies the given text as toxic or non-toxic, providing a confidence score.
 
     Returns:
         tuple: ('toxic', confidence_score) or ('non-toxic', confidence_score)
     """
-    model = load_model(model_path)
+    model = _get_cached_model(model_path)
     labels, scores = model.predict(text.replace('\n', ' '), k=1)
     label = labels[0].replace('__label__', '')
     return label, scores[0]
