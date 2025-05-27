@@ -1,14 +1,17 @@
 # analyze_warc_quality.py
 import random
 import sys
-sys.path.append('..')
+import os
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cs336_data.warc_wet_matcher import (
     find_matching_documents, 
     load_html_by_uri_from_warc
 )
 from cs336_data.utils import extract_text_from_html_bytes
-from gopher_filters import gopher_quality_filter, analyze_quality_filters
+from cs336_data.gopher_filters import analyze_quality_filters
 
 
 def analyze_warc_with_filters(warc_path, wet_path, num_samples=20):
@@ -43,7 +46,7 @@ def analyze_warc_with_filters(warc_path, wet_path, num_samples=20):
     # Summary statistics
     passed_count = sum(1 for r in results if r['passed'])
     print("\nSummary:")
-    print("  Total documents analyzed: {len(results)}")
+    print(f"  Total documents analyzed: {len(results)}")
     print(
         f"  Passed quality filters: {passed_count} "
         f"({passed_count/len(results)*100:.1f}%)"
@@ -56,8 +59,6 @@ def analyze_warc_with_filters(warc_path, wet_path, num_samples=20):
     print("- Navigation menus or forms (might pass filters but are low quality)")
     print("- Foreign language text mixed with English")
     print("- Technical documentation with code snippets")
-
-    print("\nAnalysis Results:")
 
 
 if __name__ == "__main__":
