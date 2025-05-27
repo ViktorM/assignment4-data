@@ -1,10 +1,7 @@
-# gopher_filters.py
-import re
 import nltk
 from typing import List
 
 
-# Download punkt tokenizer if not already present
 try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
@@ -75,14 +72,13 @@ def analyze_quality_filters(text_samples: List[str], sample_names: List[str] = N
     for name, text in zip(sample_names, text_samples):
         passed = gopher_quality_filter(text)
 
-        # Get detailed stats for analysis
+        # Detailed stats for analysis
         words = nltk.word_tokenize(text)
         word_count = len(words)
         mean_word_length = sum(len(word) for word in words) / len(words) if words else 0
 
         lines = text.strip().split('\n')
         ellipsis_ratio = sum(1 for line in lines if line.rstrip().endswith('...')) / len(lines) if lines else 0
-
         alpha_ratio = sum(1 for word in words if any(c.isalpha() for c in word)) / len(words) if words else 0
 
         results.append({
@@ -95,7 +91,6 @@ def analyze_quality_filters(text_samples: List[str], sample_names: List[str] = N
             'preview': text[:200] + '...' if len(text) > 200 else text
         })
 
-    # Print results
     print("Quality Filter Analysis")
     print("=" * 80)
 

@@ -1,4 +1,3 @@
-# compare_extractions.py
 import sys
 sys.path.append('..')
 
@@ -70,6 +69,7 @@ def compare_text_extractions(warc_path, wet_path, num_samples=3):
                 print("WET text has PII masking applied")
 
         print("\n")
+
 
 if __name__ == "__main__":
     warc_file = '../data/CC-MAIN-20180420081400-20180420101400-00000.warc.gz'

@@ -1,5 +1,6 @@
 from cs336_data.utils import identify_language, classify_nsfw, classify_toxic_speech
 
+
 text = "This is a sample text in English."
 lang_code, confidence = identify_language(text, "../data/lid.176.bin")
 

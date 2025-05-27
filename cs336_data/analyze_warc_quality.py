@@ -1,4 +1,3 @@
-# analyze_warc_quality.py
 import random
 import sys
 import os

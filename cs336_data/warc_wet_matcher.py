@@ -1,10 +1,3 @@
-"""
-WARC/WET File Matcher
-
-This module provides functions to match and compare documents between WARC
-and WET files.
-"""
-
 import gzip
 from warcio.archiveiterator import ArchiveIterator
 from resiliparse.extract.html2text import extract_plain_text
@@ -239,7 +232,7 @@ def analyze_file_matching(warc_path: str, wet_path: str) -> Dict[str, any]:
     matching_uris = warc_uri_set.intersection(wet_uri_set)
 
     match_pct = (
-        (len(matching_uris) / len(warc_uris) * 100) 
+        (len(matching_uris) / len(warc_uris) * 100)
         if warc_uris else 0
     )
 
@@ -261,7 +254,6 @@ if __name__ == "__main__":
         '../data/CC-MAIN-20180420081400-20180420101400-00000.warc.wet.gz'
     )
 
-    # Analyze matching
     print("Analyzing WARC/WET file matching...")
     analysis = analyze_file_matching(warc_file, wet_file)
 
@@ -274,10 +266,10 @@ if __name__ == "__main__":
     # Compare a few documents
     if analysis['matching_uris']:
         print("\nComparing first 3 matching documents...")
-        for i, uri in enumerate(analysis['matching_uris'][:3]):
+        for i, ur in enumerate(analysis['matching_uris'][:3]):
             print("\n" + "="*60)
-            print(f"Document {i+1}: {uri}")
-            comparison = compare_extraction_methods(warc_file, wet_file, uri)
+            print(f"Document {i+1}: {ur}")
+            comparison = compare_extraction_methods(warc_file, wet_file, ur)
             print(f"WARC text length: {comparison['warc_length']}")
             print(f"WET text length: {comparison['wet_length']}")
             print(f"Length difference: {comparison['length_diff']}")

@@ -3,16 +3,51 @@ from resiliparse.parse.encoding import detect_encoding
 from fasttext import load_model
 from typing import Any, Tuple, Dict
 import re
+import os
 
-# Cache for loaded models
+
 _model_cache: Dict[str, Any] = {}
 
 
 def _get_cached_model(model_path: str):
     """Load and cache FastText models to avoid repeated loading."""
     if model_path not in _model_cache:
+        # Handle relative paths
+        if not os.path.isabs(model_path):
+            # Get the directory where this file is located
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            # Go up one level to assignment4-data and then to the model path
+            # TODO: replace by a new find_data_file function?
+            absolute_path = os.path.join(os.path.dirname(current_dir), model_path)
+            if os.path.exists(absolute_path):
+                model_path = absolute_path
+
         _model_cache[model_path] = load_model(model_path)
     return _model_cache[model_path]
+
+
+def find_data_file(filename, search_paths=None):
+    """Find a data file by checking multiple possible locations."""
+    if search_paths is None:
+        search_paths = [
+            # Local paths
+            f"data/{filename}",
+            f"../data/{filename}",
+            f"./data/{filename}",
+            # Cluster paths
+            f"/data/{filename}",
+            f"/data/wiki/{filename}",
+            f"/data/classifiers/{filename}",
+            f"/data/CC/{filename}",
+            # Current directory
+            filename,
+        ]
+
+    for path in search_paths:
+        if os.path.exists(path):
+            return path
+
+    return filename
 
 
 def extract_text_from_html_bytes(html_bytes: bytes) -> str:
@@ -33,7 +68,6 @@ def extract_text_from_html_bytes(html_bytes: bytes) -> str:
         detected_encoding = detect_encoding(html_bytes)
         html_str = html_bytes.decode(detected_encoding, errors='replace')
 
-    # Extract plain text using resiliparse
     text = extract_plain_text(html_str)
 
     return text
@@ -59,6 +93,15 @@ def identify_language(text: str, model_path: str = 'data/lid.176.bin') -> tuple[
     if not text or not text.strip():
         raise ValueError("Input text cannot be empty")
 
+    # Handle relative paths for tests
+    if not os.path.isabs(model_path) and not os.path.exists(model_path):
+        # Try looking in parent directory's data folder
+        parent_data_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), model_path
+        )
+        if os.path.exists(parent_data_path):
+            model_path = parent_data_path
+
     try:
         model = _get_cached_model(model_path)
     except Exception as e:
@@ -81,7 +124,7 @@ def mask_emails(text: str) -> Tuple[str, int]:
 
 
 def mask_phone_numbers(text: str) -> Tuple[str, int]:
-    # Captures common US phone number patterns.
+    # Common US phone number patterns.
     phone_regex = r'(\+?1[\s.-]?)?\(?\b\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b'
     masked_text, count = re.subn(phone_regex, "|||PHONE_NUMBER|||", text)
     return masked_text, count
