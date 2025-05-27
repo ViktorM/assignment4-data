@@ -74,35 +74,63 @@ def prepare_training_data(
 
     # Sample URLs
     if len(wiki_urls) > num_positive:
-        sampled_urls = random.sample(wiki_urls, num_positive)
+        sampled_urls = random.sample(wiki_urls, num_positive * 2)  # Sample more to account for failures
     else:
         sampled_urls = wiki_urls
-        num_positive = len(wiki_urls)
 
-    # Collect positive examples
+    # Collect positive examples with statistics
     positive_examples = []
+    stats = {
+        'attempted': 0,
+        'successful': 0,
+        'failed_download': 0,
+        'failed_language': 0,
+        'failed_quality': 0,
+    }
+
     print(f"Downloading {num_positive} positive examples...")
 
     for i, url in enumerate(sampled_urls):
         if i % 100 == 0:
-            print(f"  Progress: {i}/{num_positive}")
+            print(f"  Progress: {i}/{len(sampled_urls)} - "
+                  f"Success rate: {stats['successful']}/{stats['attempted']} "
+                  f"({stats['successful']/max(1, stats['attempted'])*100:.1f}%)")
 
+        stats['attempted'] += 1
         text = download_url_content(url)
-        if text:
-            # Apply quality filters
-            lang, _ = identify_language(text)
-            if lang == 'en' and gopher_quality_filter(text):
-                # Clean text for fastText
-                clean_text = ' '.join(text.split())[:1000]  # Limit length
-                positive_examples.append(clean_text)
+
+        if not text:
+            stats['failed_download'] += 1
+            continue
+
+        # Apply quality filters
+        lang, _ = identify_language(text)
+        if lang != 'en':
+            stats['failed_language'] += 1
+            continue
+
+        if not gopher_quality_filter(text):
+            stats['failed_quality'] += 1
+            continue
+
+        stats['successful'] += 1
+        clean_text = ' '.join(text.split())[:1000]  # Limit length
+        positive_examples.append(clean_text)
 
         if len(positive_examples) >= num_positive:
             break
 
+    # Print final statistics
+    print(f"\n=== Download Statistics ===")
+    print(f"Total attempted: {stats['attempted']}")
+    print(f"Successful: {stats['successful']} ({stats['successful']/stats['attempted']*100:.1f}%)")
+    print(f"Failed download: {stats['failed_download']} ({stats['failed_download']/stats['attempted']*100:.1f}%)")
+    print(f"Failed language filter: {stats['failed_language']} ({stats['failed_language']/stats['attempted']*100:.1f}%)")
+    print(f"Failed quality filter: {stats['failed_quality']} ({stats['failed_quality']/stats['attempted']*100:.1f}%)")
     print(f"Collected {len(positive_examples)} positive examples")
 
     # For negative examples, we'll use synthetic low-quality text
-    # In a real implementation, you'd use Common Crawl samples
+    # TODO: switch to Common Crawl samples
     negative_examples = []
     print("Generating negative examples...")
 
